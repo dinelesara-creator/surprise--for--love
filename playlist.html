@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Moments — Playlist</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+:root{ --pink:#ff8ac9; --purple:#b58cff; --muted:#bfc7d9; --bg1:#04050a; }
+  html,body{height:100%; margin:0; font-family:Poppins, sans-serif; background: linear-gradient(180deg,#030317,#050517); color:#f6eef6; -webkit-font-smoothing:antialiased;}
+  canvas#fog, canvas#spark{ position:fixed; inset:0; z-index:0; pointer-events:none; }
+  .hearts { position:fixed; inset:0; z-index:1; pointer-events:none; }
+  .intro{ position:fixed; inset:0; z-index:999; display:flex; align-items:center; justify-content:center; background:rgba(2,2,6,0.9); }
+  .intro .box{ text-align:center; color:var(--pink); }
+  .page{ position:relative; z-index:2; max-width:1100px; margin:40px auto; padding:18px; }
+  header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .title h2{ margin:0; color:var(--pink); }
+  .layout{ display:grid; grid-template-columns:360px 1fr; gap:20px; align-items:start; }
+  .player{ background: rgba(255,255,255,0.02); padding:18px; border-radius:16px; border:1px solid rgba(255,255,255,0.02); box-shadow:0 10px 40px rgba(0,0,0,0.6); position:sticky; top:24px; }
+  .disc{ width:220px; height:220px; margin:0 auto; border-radius:18px; overflow:hidden; perspective:900px; }
+  .disc img{ width:100%; height:100%; object-fit:cover; border-radius:18px; transition: transform 1000ms cubic-bezier(.2,.9,.2,1); }
+  .disc.play img{ transform: rotateY(20deg) rotateZ(2deg) scale(1.02); filter: drop-shadow(0 12px 40px rgba(181,140,255,0.06)); }
+  .now-title{ text-align:center; margin-top:12px; font-weight:700; color:#fff; }
+  .controls{ display:flex; gap:12px; justify-content:center; margin-top:14px; }
+  .btn{ padding:10px 12px; border-radius:12px; border:none; background:linear-gradient(90deg,var(--pink),var(--purple)); color:#fff; font-weight:700; cursor:pointer; }
+  .progress{ height:8px; background:rgba(255,255,255,0.03); border-radius:8px; margin-top:12px; overflow:hidden; }
+  .progress > div{ height:100%; background:linear-gradient(90deg,var(--pink),var(--purple)); width:0%; transition: width 160ms linear; }
+  .playlist{ background:rgba(255,255,255,0.01); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); }
+  .row{ display:flex; gap:12px; align-items:center; padding:10px; border-radius:10px; transition: background .15s, transform .12s; cursor:pointer; }
+  .row:hover{ background:rgba(255,255,255,0.02); transform: translateY(-4px); }
+  .row.active{ background: linear-gradient(90deg, rgba(255,110,160,0.04), rgba(181,140,255,0.02)); box-shadow:0 10px 30px rgba(181,140,255,0.06); transform:translateY(-6px); }
+  .cover{ width:64px; height:64px; border-radius:10px; overflow:hidden; }
+  .cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .meta h4{ margin:0; font-size:16px; color:#fff; }
+  .meta p{ margin:6px 0 0; color:var(--muted); font-size:13px; }
+  .actions{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .icon{ width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:transparent; border:1px solid rgba(255,255,255,0.03); color:var(--muted); cursor:pointer; }
+  .like.active{ color:#ff5aa2; box-shadow:0 8px 20px rgba(255,90,150,0.12); }
+  .viz{ margin-top:12px; border-radius:12px; background:rgba(0,0,0,0.18); height:90px; overflow:hidden; }
+  canvas#viz{ width:100%; height:90px; display:block; }
+  .banner{ position:fixed; left:50%; transform:translateX(-50%); bottom:26px; z-index:60; background:linear-gradient(90deg,var(--pink),var(--purple)); padding:8px 18px; border-radius:30px; color:white; display:flex; gap:12px; align-items:center; font-weight:700; opacity:0; transition:opacity 300ms ease; }
+  .banner.show{ opacity:1; }
+  @media (max-width:980px){ .layout{ grid-template-columns:1fr; } .player{ position:relative; top:auto; } }
+  .btn{ margin-top:18px; background:#c42b7a; color:white; padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700; }
+  canvas#spark{ position:fixed; inset:0; pointer-events:none; z-index:1; }
+
+
+
+</style>
+</head>
+
+
+<body>
+
+
+<canvas id="fog"></canvas>
+<canvas id="spark"></canvas>
+<div class="hearts" id="hearts"></div>
+
+<!-- Intro with name reveal -->
+<div class="intro" id="intro">
+  <div class="box">
+    <h1 style="font-size:36px; color:var(--pink)">For <span style="color:#fff">My Love Amindhi</span></h1>
+    <p style="color:#cbd8f7">press open to begin</p>
+    <div style="height:12px"></div>
+    <button class="btn" id="openBtn">Playlist</button>
+  </div>
+</div>
+
+
+  
+<div class="page">
+  <header>
+    <div class="title"><h2>Moments — Playlist</h2><div class="subtitle" style="color:var(--muted)">Romance • Plays</div></div>
+    <div class="small">Tip: Click a track to play • Heart ♥ to save</div>
+  </header>
+
+
+
+
+
+
+
+<div class="layout">
+    <aside class="player">
+      <div class="disc">
+        <img id="nowCover" src="cover/cover1.jpg">
+      </div>
+      <h3 id="nowTitle">Nothing playing</h3>
+      <p id="nowArtist">—</p>
+
+      <div class="controls">
+        <button class="btn" id="prev">⟨</button>
+        <button class="btn" id="play">▶</button>
+        <button class="btn" id="next">⟩</button>
+      </div>
+
+      <div class="progress"><div id="progBar"></div></div>
+      <div id="timeInfo">0:00 / 0:00</div>
+
+      <div class="controls">
+        <button class="btn" id="shuffle">Shuffle</button>
+        <button class="btn" id="repeat">Repeat</button>
+      </div>
+    </aside>
+
+    <section class="playlist" id="playlist"></section>
+  </div>
+</div>
+
+<div class="banner" id="banner"><img id="bannerImg" src="cover/cover1.jpg" style="width:46px;height:46px;border-radius:8px;"><div id="bannerTxt">Now Playing</div></div>
+
+<button class="btn" onclick="window.location.href='final.html'">Next </button>
+</div>
+
+
+ 
+
+
+<audio id="audio"></audio>
+
+<script>
+
+/* session guard */
+try{ if(sessionStorage.getItem('bd_access')!=='true') window.location.replace('index.html'); }catch(e){ window.location.replace('index.html'); }
+
+
+
+
+
+const tracks = [
+ {title:"I Think They Call This Love",artist:"Elliot James Reay",src:"audio/song1.mp3",cover:"cover/cover1.jpg"},
+ {title:"Say Yes To Heaven",artist:"Lana Del Rey",src:"audio/song2.mp3",cover:"cover/cover2.jpg"},
+ {title:"Love Me Not",artist:"Ravyn Lenae",src:"audio/song3.mp3",cover:"cover/cover3.jpg"},
+ {title:"Line Without A Hook",artist:"Ricky Montgomery",src:"audio/song4.mp3",cover:"cover/cover4.jpg"},
+ {title:"Music To Watch Boys To",artist:"Lana Del Rey",src:"audio/song5.mp3",cover:"cover/cover5.jpg"}
+];
+
+const audio = document.getElementById("audio");
+const playBtn = document.getElementById("play");
+const prevBtn = document.getElementById("prev");
+const nextBtn = document.getElementById("next");
+const shuffleBtn = document.getElementById("shuffle");
+const repeatBtn = document.getElementById("repeat");
+const progBar = document.getElementById("progBar");
+const timeInfo = document.getElementById("timeInfo");
+const playlistEl = document.getElementById("playlist");
+
+let index = 0;
+let shuffle = false;
+let repeat = false;
+
+function loadSong(i){
+  const t = tracks[i];
+  audio.src = t.src;
+  nowTitle.textContent = t.title;
+  nowArtist.textContent = t.artist;
+  nowCover.src = t.cover;
+  highlight();
+}
+
+function playSong(){
+  audio.play();
+  playBtn.textContent = "⏸";
+}
+
+function pauseSong(){
+  audio.pause();
+  playBtn.textContent = "▶";
+}
+
+playBtn.onclick = ()=> audio.paused ? playSong() : pauseSong();
+
+nextBtn.onclick = ()=>{
+  index = shuffle ? Math.floor(Math.random()*tracks.length) : index+1;
+  if(index >= tracks.length) index = repeat ? 0 : tracks.length-1;
+  loadSong(index);
+  playSong();
+};
+
+prevBtn.onclick = ()=>{
+  index = index>0 ? index-1 : 0;
+  loadSong(index);
+  playSong();
+};
+
+shuffleBtn.onclick = ()=>{
+  shuffle = !shuffle;
+  shuffleBtn.style.opacity = shuffle ? "1" : "0.6";
+};
+
+repeatBtn.onclick = ()=>{
+  repeat = !repeat;
+  repeatBtn.style.opacity = repeat ? "1" : "0.6";
+};
+
+audio.addEventListener("ended", ()=>{
+  if(repeat){
+    playSong();
+  } else {
+    nextBtn.click();
+  }
+});
+
+audio.addEventListener("timeupdate", ()=>{
+  if(audio.duration){
+    progBar.style.width = (audio.currentTime/audio.duration*100)+"%";
+    timeInfo.textContent =
+      `${format(audio.currentTime)} / ${format(audio.duration)}`;
+  }
+});
+
+function format(s){
+  const m = Math.floor(s/60);
+  const sec = Math.floor(s%60).toString().padStart(2,"0");
+  return `${m}:${sec}`;
+}
+
+function renderPlaylist(){
+  playlistEl.innerHTML="";
+  tracks.forEach((t,i)=>{
+    const row = document.createElement("div");
+    row.className="row";
+    row.innerHTML=`
+      <div class="cover"><img src="${t.cover}"></div>
+      <div>
+        <strong>${t.title}</strong><br>
+        <small>${t.artist}</small>
+      </div>`;
+    row.onclick=()=>{
+      index=i;
+      loadSong(i);
+      playSong();
+    };
+    playlistEl.appendChild(row);
+  });
+}
+
+function highlight(){
+  document.querySelectorAll(".row").forEach((r,i)=>{
+    r.classList.toggle("active",i===index);
+  });
+}
+
+renderPlaylist();
+loadSong(index);
+
+
+
+
+ 
+
+const heartsContainer = document.getElementById('hearts');
+
+setInterval(() => {
+  const h = document.createElement('div');
+  h.textContent = '❤';
+  h.style.position = 'fixed';
+  h.style.left = (10 + Math.random() * 80) + '%';
+  h.style.top = (70 + Math.random() * 20) + '%';
+  h.style.fontSize = (12 + Math.random() * 30) + 'px';
+  h.style.opacity = '0.95';
+  h.style.color = 'white';
+  h.style.zIndex = 2;
+
+  heartsContainer.appendChild(h);
+
+  h.animate(
+    [
+      { transform: 'translateY(0) scale(1)', opacity: 1 },
+      { transform: 'translateY(-220px) scale(1.2)', opacity: 0 }
+    ],
+    {
+      duration: 7000 + Math.random() * 4000,
+      easing: 'linear'
+    }
+  );
+
+  setTimeout(() => h.remove(), 9000);
+}, 1600);
+
+
+
+
+/* show banner */
+function showBanner(){ banner.classList.add('show'); setTimeout(()=> banner.classList.remove('show'), 4200); }
+
+/* pop heart animation */
+function popHeart(x,y){
+  const el = document.createElement('div'); el.style.position='fixed'; el.style.left = x+'px'; el.style.top = y+'px'; el.style.zIndex = 999; el.className='pop'; el.textContent='❤'; document.body.appendChild(el);
+  setTimeout(()=> el.remove(), 900);
+}
+
+/* fog, sparkles, floating hearts */
+const fog = document.getElementById('fog'), fctx = fog.getContext('2d');
+const spark = document.getElementById('spark'), sctx = spark.getContext('2d');
+function resize(){ fog.width = innerWidth; fog.height = innerHeight; spark.width = innerWidth; spark.height = innerHeight; }
+window.addEventListener('resize', resize); resize();
+const blobs = Array.from({length:6}).map(()=> ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:120+Math.random()*260, vx:(Math.random()-0.5)*0.08, vy:(Math.random()-0.5)*0.04, hue: 260 - Math.random()*60 }));
+function drawFog(){ fctx.clearRect(0,0,fog.width,fog.height); blobs.forEach(b=>{ b.x+=b.vx; b.y+=b.vy; if(b.x-b.r>fog.width) b.x=-b.r; if(b.x+b.r<0) b.x=fog.width+b.r; const g = fctx.createRadialGradient(b.x,b.y,b.r*0.1,b.x,b.y,b.r); g.addColorStop(0, `hsla(${b.hue},80%,70%,0.08)`); g.addColorStop(1, `hsla(${b.hue},60%,40%,0.01)`); fctx.fillStyle=g; fctx.beginPath(); fctx.ellipse(b.x,b.y,b.r,b.r*0.7,0,0,Math.PI*2); fctx.fill(); }); requestAnimationFrame(drawFog); }
+drawFog();
+const sparks=[]; function spawn(){ sparks.push({ x:Math.random()*spark.width, y:Math.random()*spark.height*0.6, r:Math.random()*2+0.6, life:60+Math.random()*100, vx:(Math.random()-0.5)*0.2, vy:(Math.random()-0.2)*0.1 }); } setInterval(spawn, 120);
+function drawS(){ sctx.clearRect(0,0,spark.width,spark.height); for(let i=sparks.length-1;i>=0;i--){ const p=sparks[i]; p.x+=p.vx; p.y+=p.vy; p.life--; sctx.beginPath(); sctx.fillStyle = `rgba(255,200,230,${Math.max(p.life/140,0)})`; sctx.arc(p.x,p.y,p.r,0,Math.PI*2); sctx.fill(); if(p.life<=0) sparks.splice(i,1); } requestAnimationFrame(drawS); }
+drawS();
+setInterval(()=>{ const h = document.createElement('div'); h.textContent='❤'; h.style.position='fixed'; h.style.left = (10+Math.random()*80)+'%'; h.style.top = (70+Math.random()*20)+'%'; h.style.fontSize = (12+Math.random()*30)+'px'; h.style.opacity='0.95'; h.style.zIndex=2; heartsContainer.appendChild(h); h.animate([{ transform:'translateY(0) scale(1)', opacity:1 },{ transform:'translateY(-220px) scale(1.2)', opacity:0 }], { duration:7000+Math.random()*4000, easing:'linear' }); setTimeout(()=> h.remove(),9000); }, 1600);
+
+/* intro open */
+openBtn.addEventListener('click', ()=> { intro.style.display='none'; // small reveal message
+  const msg = document.createElement('div'); msg.style.position='fixed'; msg.style.top='24px'; msg.style.left='50%'; msg.style.transform='translateX(-50%)'; msg.style.background='linear-gradient(90deg,var(--pink),var(--purple))'; msg.style.padding='10px 16px'; msg.style.borderRadius='12px'; msg.style.color='white'; msg.style.zIndex=999; msg.textContent='My Love Amindhi — music to remember ❤️'; document.body.appendChild(msg); setTimeout(()=> msg.remove(),5200); });
+
+/* ensure audio context resume on first gesture */
+['click','touchstart','keydown'].forEach(evt => {
+  window.addEventListener(evt, async function resumeOnce(){
+    if(audioCtx.state === 'suspended') await audioCtx.resume();
+    try{ audioA.play().catch(()=>{}); audioA.pause(); audioB.play().catch(()=>{}); audioB.pause(); bgPiano.play().catch(()=>{}); bgPiano.pause(); }catch(e){}
+    window.removeEventListener(evt, resumeOnce);
+  });
+});
+
+/* helper to show now playing */
+audioA.onplay = ()=> { playing=true; playBtn.textContent='⏸'; };
+audioB.onplay = ()=> { playing=true; playBtn.textContent='⏸'; };
+audioA.onpause = ()=> { if(getActiveEl().paused) { playing=false; playBtn.textContent='▶'; } };
+audioB.onpause = ()=> { if(getActiveEl().paused) { playing=false; playBtn.textContent='▶'; } };
+
+/* keyboard shortcuts */
+document.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); playBtn.click(); } if(e.key==='ArrowRight') nextBtn.click(); if(e.key==='ArrowLeft') prevBtn.click(); });
+
+/* highlight & init */
+updateNowUI();
+render();
+
+/* footer signature (optional) */
+const footer = document.createElement('div'); footer.style.textAlign='center'; footer.style.color='var(--muted)'; footer.style.marginTop='18px'; footer.innerHTML = 'Made for <strong>My Love Amindhi</strong>'; document.body.appendChild(footer);
+
+
+
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>
+

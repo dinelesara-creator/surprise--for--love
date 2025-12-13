@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Final</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  body{ margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background: radial-gradient(circle at 20% 10%, #ffdff0, #fff0f7 10%, #120017 60%); font-family:Poppins, sans-serif; color:#2b0626; overflow:hidden }
+  .center{ text-align:center; z-index:3; }
+  h1{ font-size:42px; margin:0 0 8px 0; color:#7a1033; }
+  p{ margin:8px 0 18px 0; font-size:18px; color:#4b092b; }
+  .heart{ width:220px; height:220px; position:relative; margin:12px auto; transform:rotate(-45deg); animation: beat 1s ease-in-out infinite; }
+  .heart:before, .heart:after{ content:""; position:absolute; width:220px; height:220px; background:linear-gradient(180deg,#ff6fa8,#ff638f); border-radius:50%; top:-110px; left:0; }
+  .heart:after{ left:110px; top:0; }
+  .inner{ width:220px; height:220px; transform:rotate(45deg); }
+  @keyframes beat{0%{transform:translateY(0) rotate(-45deg) scale(.94)}50%{transform:translateY(-10px) rotate(-45deg) scale(1.12)}100%{transform:translateY(0) rotate(-45deg) scale(.94)}}
+  .btn{ margin-top:14px; background:#7a1033; color:white; padding:10px 14px; border-radius:10px; border:none; cursor:pointer; }
+  canvas#conf{ position:fixed; inset:0; z-index:2; pointer-events:none; }
+  .secret{ margin-top:12px; font-weight:700; color:#7a1033; display:none; }
+  .luv{ font-size:64px; color:#ff2d7a; font-weight:900; letter-spacing:6px; opacity:0; transform:scale(0.6); transition: all 800ms cubic-bezier(.2,.9,.22,1); }
+  .luv.show{ opacity:1; transform:scale(1); }
+</style>
+</head>
+<body>
+<script> if(sessionStorage.getItem('bd_access')!=='true') window.location.replace('index.html'); </script>
+
+<canvas id="conf"></canvas>
+
+<div class="center">
+  <h1>🎉 You passed all levels!</h1>
+
+  <!-- Giant glowing heart -->
+  <div class="heart"><div class="inner"></div></div>
+
+  <!-- "I LOVE YOU" animated reveal -->
+  <div id="luv" class="luv">I LOVE YOU</div>
+
+  <p id="reveal">You are my whole world. ❤️</p>
+  <div class="secret" id="secretMsg">Comments:Hit me a whatsapp messege to my new number🌹(+94 76***6036)</div>
+  <button class="btn" onclick="window.location.href='index.html'">Start Again</button>
+</div>
+
+<script>
+// confetti
+const c = document.getElementById('conf'); const ctx = c.getContext('2d');
+function rs(){ c.width = innerWidth; c.height = innerHeight; } window.addEventListener('resize', rs); rs();
+const conf=[]; function spawn(){ conf.push({x:Math.random()*c.width, y:-10, vx:(Math.random()-0.5)*8, vy:2+Math.random()*5, r:6+Math.random()*12, col:`hsl(${Math.random()*360},80%,60%)`, rot:Math.random()*360, vr:(Math.random()-0.5)*8}); }
+setInterval(()=>{ for(let i=0;i<14;i++) spawn(); }, 180);
+function draw(){
+  ctx.clearRect(0,0,c.width,c.height);
+  for(let i=conf.length-1;i>=0;i--){ const p=conf[i]; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180); ctx.fillStyle=p.col; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*1.6); ctx.restore(); if(p.y>c.height+60) conf.splice(i,1); }
+  requestAnimationFrame(draw);
+}
+draw();
+
+// show "I LOVE YOU" animation (A) and make heart glow bigger (C)
+setTimeout(()=>{
+  document.getElementById('luv').classList.add('show');
+}, 600);
+
+// optional extra pulse for heart
+setTimeout(()=> { document.querySelector('.heart').style.filter = 'drop-shadow(0 20px 40px rgba(255,110,140,0.25))'; }, 600);
+
+// secret message after 10s
+setTimeout(()=>{ document.getElementById('secretMsg').style.display='block'; document.getElementById('reveal').innerText = 'You are my whole world. I love you.'; }, 10000);
+</script>
+</body>
+</html>

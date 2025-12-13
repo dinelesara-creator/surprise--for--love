@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Verification</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="">
+<style>
+  :root{ --bg:#081226; --card:#f8fbff; --blue:#1a73e8; --text:#0b1730; --panel:rgba(255,255,255,0.02); }
+  html,body{height:100%; margin:0; font-family:Inter, Poppins, sans-serif; background: radial-gradient(circle at 20% 10%, #0b0f1a 0%, #02030a 60%); color:var(--card);}
+  /* mysterious 3D-ish background (CSS + canvas will add subtle animation) */
+  .wrap{max-width:640px;margin:40px auto;padding:20px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); box-shadow:0 12px 40px rgba(0,0,0,0.6); position:relative; overflow:hidden;}
+  h1{color:#fff; margin:0 0 8px 0; font-size:22px}
+  p{color:#d0d8ea; margin:0 0 18px 0}
+  .inputs{display:flex; gap:8px; margin-bottom:12px;}
+  input[type="text"]{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); color:#fff; outline:none; font-size:15px;}
+  button{padding:10px 14px;border-radius:10px;border:none;background:var(--blue); color:white; font-weight:700; cursor:pointer;}
+  .recap{ margin-top:12px; padding:14px; border-radius:10px; background: linear-gradient(180deg,#ffffff,#f3f8ff); color:var(--text); display:none; box-shadow:0 6px 18px rgba(26,115,232,0.08);}
+  .recap .prompt{display:flex; gap:12px; align-items:center;}
+  .badge{ background:var(--blue); color:#fff; padding:6px 10px; border-radius:8px; font-weight:700; font-size:13px;}
+  .grid{ margin-top:12px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .grid img{width:100%; height:100%; object-fit:cover; border-radius:8px; cursor:pointer; border:3px solid transparent; transition:transform .14s ease, border-color .12s ease;}
+  .grid img:hover{transform:translateY(-4px)}
+  .grid img.selected{border-color:var(--blue); transform:translateY(-6px); box-shadow:0 10px 30px rgba(26,115,232,0.16);}
+  .actions{display:flex; justify-content:space-between; align-items:center; margin-top:10px}
+  .hint{color:#334466; font-size:13px}
+  .err{color:#b00020; font-weight:700; margin-top:10px}
+  /* small 3D-look floating shapes background */
+  .bg-shape{ position:absolute; right:-120px; top:-120px; width:360px; height:360px; background: linear-gradient(135deg, rgba(26,115,232,0.18), rgba(122,14,72,0.08)); filter: blur(36px); transform: rotate(15deg); pointer-events:none;}
+  canvas#bg3d{ position:absolute; inset:0; z-index:0; pointer-events:none; }
+  .card-content{ position:relative; z-index:2; }
+</style>
+</head>
+<body>
+  <canvas id="bg3d"></canvas>
+  <div class="wrap">
+    <div class="bg-shape"></div>
+    <div class="card-content">
+      <h1>Verify to Enter to the Surprise 🎁</h1>
+      <p>Enter the full name to complete the verification to continue.</p>
+
+      <div class="inputs">
+        <input id="fullname" type="text" placeholder="e.g:Type First Two Names">
+        <button id="startBtn" onclick="startVerification()">Start</button>
+      </div>
+
+      <div id="recap" class="recap" aria-hidden="true">
+        <div class="prompt">
+          <div class="badge">reCAPTCHA</div>
+          <div>
+            <strong>Select the image with LOVE ❤️</strong>
+            <div class="hint">(Click the image that shows the heart)</div>
+          </div>
+        </div>
+
+        <div class="grid" id="grid">
+          <!-- Replace these src paths with your actual images in verify\ folder.
+               The correct image must be verify/1.png (or full Windows path).
+               Add six images (1..6). -->
+          <img src="C:\Users\Kaya\Desktop\web\birdvertify\2.png" data-correct="no" alt="v1">
+          <img src="C:\Users\Kaya\Desktop\web\birdvertify\4.png" data-correct="no" alt="v2">
+          <img src="C:\Users\Kaya\Desktop\web\birdvertify\1.png" data-correct="yes" alt="v3">
+          <img src="C:\Users\Kaya\Desktop\web\birdvertify\3.png" data-correct="no" alt="v4">
+          <img src="C:\Users\Kaya\Desktop\web\birdvertify\5.png" data-correct="no" alt="v5">
+          <img src="C:\Users\Kaya\Desktop\web\birdvertify\6.png" data-correct="no" alt="v6">
+        </div>
+
+        <div class="actions">
+          <div class="hint">Select the image with LOVE ❤️</div>
+          <div>
+            <button onclick="resetGrid()" class="ghost">Reset</button>
+            <button onclick="finishVerification()">Verify</button>
+          </div>
+        </div>
+
+        <div id="err" class="err" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* 3D-ish animated background (simple moving gradient blobs) */
+const canvas = document.getElementById('bg3d');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+window.addEventListener('resize', resize); resize();
+const blobs = [
+  {x:innerWidth*0.15, y:innerHeight*0.2, r:280, vx:0.15, vy:0.12, hue:210},
+  {x:innerWidth*0.85, y:innerHeight*0.1, r:220, vx:-0.12, vy:0.08, hue:315}
+];
+function drawBg(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  blobs.forEach(b=>{
+    b.x += b.vx; b.y += b.vy;
+    if(b.x-b.r>canvas.width) b.x = -b.r;
+    if(b.x+b.r<0) b.x = canvas.width + b.r;
+    if(b.y-b.r>canvas.height) b.y = -b.r;
+    if(b.y+b.r<0) b.y = canvas.height + b.r;
+    const g = ctx.createRadialGradient(b.x,b.y,b.r*0.1,b.x,b.y,b.r);
+    g.addColorStop(0, `hsla(${b.hue},80%,70%,0.18)`);
+    g.addColorStop(1, `hsla(${b.hue},70%,40%,0.02)`);
+    ctx.fillStyle = g; ctx.beginPath();
+    ctx.ellipse(b.x,b.y,b.r,b.r*0.8,0,0,Math.PI*2); ctx.fill();
+  });
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+/* Verification logic */
+function normalizePath(s){
+  if(!s) return '';
+  return s.replace(/\\/g,'/').toLowerCase();
+}
+
+function startVerification(){
+  const name = document.getElementById('fullname').value || '';
+  const norm = name.replace(/\s+/g,' ').trim().toLowerCase();
+  if(!norm){
+    alert('Please enter the full name.');
+    return;
+  }
+  // Only allow "shaheli amindhi"
+  if(norm !== 'shaheli amindhi'){
+    alert('Access denied');
+    return;
+  }
+  document.getElementById('recap').style.display = 'block';
+  document.getElementById('recap').setAttribute('aria-hidden', 'false');
+}
+
+/* Image selection */
+const imgs = document.querySelectorAll('.grid img');
+let selected = null;
+imgs.forEach(img=>{
+  img.addEventListener('click', ()=>{
+    imgs.forEach(i=>i.classList.remove('selected'));
+    img.classList.add('selected');
+    selected = img;
+    document.getElementById('err').style.display='none';
+  });
+});
+
+function resetGrid(){
+  imgs.forEach(i=>i.classList.remove('selected'));
+  selected = null;
+  document.getElementById('err').style.display='none';
+}
+
+/* Finish verification: allow only if selected image src matches verify/1.png OR full Windows path */
+function finishVerification(){
+  const errEl = document.getElementById('err');
+  errEl.style.display='none'; errEl.textContent='';
+  if(!selected){
+    errEl.style.display='block'; errEl.textContent='Please select an image.';
+    return;
+  }
+  const src = selected.getAttribute('src') || '';
+  const norm = normalizePath(src);
+  const allowedRel = 'verify/1.png';
+  const allowedWin = 'c:/users/kaya/desktop/web/verify/1.png';
+  // also accept if data-correct attribute set to yes
+  const dataCorrect = selected.dataset.correct === 'yes';
+  if(dataCorrect || norm.endsWith(allowedRel) || norm.endsWith(allowedWin)){
+    // grant access: set session flag & store name
+    sessionStorage.setItem('bd_access','true');
+    sessionStorage.setItem('bd_name', (document.getElementById('fullname').value || '').trim());
+    // small delay + redirect to birthday page
+    setTimeout(()=> window.location.href = 'birthday.html', 350);
+  } else {
+    errEl.style.display='block'; errEl.textContent='Verification failed — select the correct image.';
+  }
+}
+</script>
+</body>
+</html>
