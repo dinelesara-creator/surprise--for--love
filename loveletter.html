@@ -26,6 +26,13 @@
   <p>
     Happy Birthday Shaheli, my dearest Angry Bird. May every wish you whisper come true. I love you, always.
   </p>
+  
+  
+<div class="photo-frame">
+  <img src="images/love-sketch.jpg" alt="love memory">
+</div>
+
+
 
   <button class="btn" onclick="window.location.href='playlist.html'">Playlist ➜</button>
 </div>
@@ -37,6 +44,63 @@ const parts=[];
 function spawn(){ parts.push({x:Math.random()*c.width, y:Math.random()*c.height*0.6, r:Math.random()*2+1, life:80+Math.random()*80, vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.1)*0.3}); }
 setInterval(spawn, 120);
 function anim(){ ctx.clearRect(0,0,c.width,c.height); for(let i=parts.length-1;i>=0;i--){ const p=parts[i]; p.x+=p.vx; p.y+=p.vy; p.life--; ctx.beginPath(); ctx.fillStyle = `rgba(196,74,136,${Math.max(p.life/150,0)})`; ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); if(p.life<=0) parts.splice(i,1); } requestAnimationFrame(anim); } anim();
+
+
+
+/* vintage mysterious photo frame */
+.photo-frame{
+  position:absolute;
+  top:50%;
+  right:28px;
+  transform:translateY(-50%);
+  width:260px;
+  padding:14px;
+  background:#f5e7dc;
+  border:6px solid #3b2b2b;
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,0.25),
+    0 18px 40px rgba(0,0,0,0.35);
+  filter: sepia(0.35) contrast(1.05);
+  transition: transform 0.15s ease;
+  cursor:pointer;
+}
+
+.photo-frame::before{
+  content:'';
+  position:absolute;
+  inset:6px;
+  border:1px dashed rgba(80,40,40,0.4);
+  pointer-events:none;
+}
+
+.photo-frame img{
+  width:100%;
+  display:block;
+  border-radius:4px;
+  filter: grayscale(0.2) brightness(0.95);
+}
+
+/* shake animation */
+.photo-frame:hover{
+  animation: shake 0.45s linear infinite;
+}
+
+@keyframes shake{
+  0%{ transform:translateY(-50%) rotate(0deg); }
+  25%{ transform:translateY(-50%) rotate(1.5deg); }
+  50%{ transform:translateY(-50%) rotate(-1.5deg
+
+
+
+
+
+
+
+
+
+
+
 </script>
 </body>
 </html>
+
